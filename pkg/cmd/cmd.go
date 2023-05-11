@@ -1,8 +1,15 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
+	"context"
 	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/spf13/cobra"
+
+	"github.com/a4913994/miner/pkg/cmd/runner"
+	logger "github.com/a4913994/miner/pkg/log"
 )
 
 type MinerOptions struct {
@@ -38,8 +45,20 @@ Find more information at:
 	https://github.com/a4913994/miner
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			_ = cmd.Help()
+
+			r := runner.New()
+
+			ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+			defer stop()
+
+			err := r.Run(ctx)
+			if err != nil {
+				logger.Fatalf("Miner runner failed", "error", err)
+				os.Exit(1)
+			}
 		},
+		SilenceUsage:  true,
+		SilenceErrors: true,
 	}
 
 	//flags := cmds.Flags()
